@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSupabaseServerClient } from "@/lib/supabase";
 
 function isValidEmail(email: unknown): email is string {
   if (typeof email !== "string") return false;
@@ -6,45 +7,44 @@ function isValidEmail(email: unknown): email is string {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as { email?: unknown } | null;
-  const email = body?.email;
-
-  if (!isValidEmail(email)) {
-    return NextResponse.json({ error: "Invalid email." }, { status: 400 });
-  }
-
-  // Optional: forward to your backend / CRM / email provider.
-  // Set these in Vercel Environment Variables (never hardcode secrets).
-  const webhookUrl = process.env.WAITLIST_WEBHOOK_URL;
-  const webhookSecret = process.env.WAITLIST_WEBHOOK_SECRET;
-
   try {
-    if (webhookUrl) {
-      const res = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(webhookSecret ? { Authorization: `Bearer ${webhookSecret}` } : {})
-        },
-        body: JSON.stringify({ email })
-      });
+    const body = (await req.json().catch(() => null)) as { email?: unknown } | null;
+    const rawEmail = body?.email;
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        return NextResponse.json(
-          { error: "Failed to save email.", details: text || undefined },
-          { status: 502 }
-        );
-      }
-    } else {
-      // No persistence configured: still respond success so the UI flow works.
-      console.log("[waitlist] email captured:", email);
+    if (typeof rawEmail !== "string" || rawEmail.trim().length === 0) {
+      return NextResponse.json({ error: "Missing email." }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Success" }, { status: 200 });
+    const email = rawEmail.trim().toLowerCase();
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: "Invalid email." }, { status: 400 });
+    }
+
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase.from("waitlist").insert({ email });
+
+    if (error) {
+      // Postgres unique constraint violation
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { success: true, duplicate: true, message: "You're already on the waitlist." },
+          { status: 200 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to save email.", details: error.message, code: error.code || undefined },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: "Success" }, { status: 200 });
   } catch (e) {
     return NextResponse.json(
-      { error: "Unexpected server error.", details: e instanceof Error ? e.message : undefined },
+      {
+        error: "Unexpected server error.",
+        details: e instanceof Error ? e.message : undefined
+      },
       { status: 500 }
     );
   }

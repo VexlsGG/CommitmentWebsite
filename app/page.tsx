@@ -14,6 +14,18 @@ export default function WaitlistPage() {
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => isValidEmail(email), [email]);
+  const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl =
+    rawSiteUrl.startsWith("http://") || rawSiteUrl.startsWith("https://") ? rawSiteUrl : `https://${rawSiteUrl}`;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Commit",
+    applicationCategory: "ProductivityApplication",
+    operatingSystem: "Web",
+    description: "Commitment logs your habits like commits, so staying consistent is effortless.",
+    url: siteUrl
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,6 +57,11 @@ export default function WaitlistPage() {
 
   return (
     <main className="min-h-dvh bg-[#ECECEC]">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       {/* Hidden reference asset (requested) */}
       <img src="/assets/FinalImage.svg" alt="" className="sr-only" />
 
@@ -52,29 +69,29 @@ export default function WaitlistPage() {
         <div className="relative flex flex-col items-center gap-10 lg:block lg:h-full">
           {/* Left content */}
           <div className="w-full max-w-[640px] lg:absolute lg:left-[168px] lg:top-[178px] lg:max-w-[620px]">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <Image
                 src="/assets/CommitLogo.png"
                 alt="Commitment"
                 width={67}
                 height={67}
                 priority
-                className="h-[67px] w-[67px]"
+                className="h-[52px] w-[52px] sm:h-[67px] sm:w-[67px]"
               />
-              <p className="text-[40px] font-semibold tracking-[-0.02em] text-black">Commitment</p>
+              <p className="text-[28px] font-semibold tracking-[-0.02em] text-black sm:text-[40px]">Commitment</p>
             </div>
 
-            <h1 className="mt-16 text-balance text-[56px] font-extrabold leading-[1.04] tracking-[-0.02em] text-black sm:text-[64px] lg:mt-[92px]">
+            <h1 className="mt-12 text-balance text-[42px] font-extrabold leading-[1.06] tracking-[-0.02em] text-black sm:mt-16 sm:text-[56px] lg:mt-[92px] lg:text-[64px]">
               Not your average habit <br className="hidden lg:block" />
               tracker app.
             </h1>
 
-            <p className="mt-6 max-w-[560px] text-pretty text-[20px] leading-[1.35] tracking-[-0.01em] text-black/85 sm:text-[22px]">
+            <p className="mt-5 max-w-[560px] text-pretty text-[18px] leading-[1.45] tracking-[-0.01em] text-black/85 sm:mt-6 sm:text-[20px] lg:text-[22px]">
               Commitment logs your habits like commits, so staying consistent is effortless.
             </p>
 
             <form onSubmit={onSubmit} className="mt-10 max-w-[560px]">
-              <div className="flex h-16 w-full overflow-hidden rounded-[18px] border border-black/60 bg-white">
+              <div className="grid w-full overflow-hidden rounded-[18px] border border-black/60 bg-white sm:h-16 sm:grid-cols-[1fr_210px]">
                 <label className="sr-only" htmlFor="email">
                   Email
                 </label>
@@ -88,13 +105,13 @@ export default function WaitlistPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={status === "submitting" || status === "success"}
-                  className="h-full flex-1 bg-transparent px-6 text-[22px] text-black placeholder:text-[#C9C9C9] outline-none"
+                  className="h-14 bg-transparent px-5 text-[18px] text-black placeholder:text-[#C9C9C9] outline-none sm:h-full sm:px-6 sm:text-[20px] lg:text-[22px]"
                 />
 
                 <button
                   type="submit"
                   disabled={!canSubmit || status === "submitting" || status === "success"}
-                  className="h-full w-[210px] border-l border-black/60 bg-[#0A66D7] text-[22px] font-medium text-white disabled:opacity-70"
+                  className="h-14 border-t border-black/60 bg-[#0A66D7] px-6 text-[18px] font-medium text-white disabled:opacity-70 sm:h-full sm:border-l sm:border-t-0 sm:px-0 sm:text-[20px] lg:text-[22px]"
                 >
                   Join waitlist
                 </button>
@@ -116,7 +133,7 @@ export default function WaitlistPage() {
                 href="https://x.com/vexlsgg"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 text-[22px] font-medium text-[#B8B8B8]"
+                className="inline-flex items-center gap-2 text-[18px] font-medium text-[#B8B8B8] sm:text-[20px] lg:text-[22px]"
               >
                 Follow @vexlsgg for updates!
                 <svg
